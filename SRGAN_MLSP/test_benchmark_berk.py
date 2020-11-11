@@ -30,11 +30,11 @@ if torch.cuda.is_available():
     model = model.cuda()
 model.load_state_dict(torch.load('epochs/' + MODEL_NAME))
 
-test_set = TestDatasetFromFolder('/home/ufuk/ufuk/MLSP_Project/data/test', upscale_factor=UPSCALE_FACTOR)
+test_set = TestDatasetFromFolder('/mnt/spinner/mlsp_project/data/test/', upscale_factor=UPSCALE_FACTOR)
 test_loader = DataLoader(dataset=test_set, num_workers=4, batch_size=1, shuffle=False)
 test_bar = tqdm(test_loader, desc='[testing benchmark datasets]')
 
-out_path = 'benchmark_results/SRF_' + str(UPSCALE_FACTOR) + '/'
+out_path = '/mnt/spinner/mlsp_project/outputs/SRF_' + str(UPSCALE_FACTOR) + '/'
 if not os.path.exists(out_path):
     os.makedirs(out_path)
 
@@ -62,7 +62,7 @@ for image_name, lr_image, hr_restore_img, hr_image in test_bar:
                          image_name.split('.')[-1], padding=5)
 
         # Modification to save images separately
-        np.save(out_path+image_name.split('.')[0]+'hr_restore_psnr_%.4f_ssim_%.4f'%(psnr, ssim)                   ,hr_restore_img.cpu().numpy())
+        np.save(out_path+image_name.split('.')[0] + 'hr_restore_psnr_%.4f_ssim_%.4f'%(psnr, ssim)                   ,hr_restore_img.cpu().numpy())
         np.save(out_path + image_name.split('.')[0] + 'hr_psnr_%.4f_ssim_%.4f' % (psnr, ssim),hr_image.cpu().numpy())
         np.save(out_path + image_name.split('.')[0] + 'lr_psnr_%.4f_ssim_%.4f' % (psnr, ssim),sr_image.cpu().numpy())
 
