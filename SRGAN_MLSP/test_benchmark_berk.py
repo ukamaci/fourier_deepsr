@@ -16,13 +16,13 @@ from model import Generator
 
 parser = argparse.ArgumentParser(description='Test Benchmark Datasets')
 parser.add_argument('--upscale_factor', default=4, type=int, help='super resolution upscale factor')
-parser.add_argument('--model_name', default='netG_epoch_4_100.pth', type=str, help='generator model epoch name')
+parser.add_argument('--model_name', default='netG_epoch_4_950.pth', type=str, help='generator model epoch name')
 opt = parser.parse_args()
 
 UPSCALE_FACTOR = opt.upscale_factor
 MODEL_NAME = opt.model_name
 
-results = {'Set5': {'psnr': [], 'ssim': []}, 'Set14': {'psnr': [], 'ssim': []}, 'BSD100': {'psnr': [], 'ssim': []},
+results = {'Set5': {'psnr': [], 'ssim': []}, 'VOC': {'psnr': [], 'ssim': []},'Set14': {'psnr': [], 'ssim': []}, 'BSD100': {'psnr': [], 'ssim': []},
            'Urban100': {'psnr': [], 'ssim': []}, 'SunHays80': {'psnr': [], 'ssim': []}}
 
 model = Generator(UPSCALE_FACTOR).eval()
@@ -40,35 +40,35 @@ if not os.path.exists(out_path):
 
 for image_name, lr_image, hr_restore_img, hr_image in test_bar:
     image_name = image_name[0]
-    lr_image = Variable(lr_image, volatile=True)
-    hr_image = Variable(hr_image, volatile=True)
-    if torch.cuda.is_available():
-        lr_image = lr_image.cuda()
-        hr_image = hr_image.cuda()
+    with torch.no_grad():
+        lr_image = Variable(lr_image)
+        hr_image = Variable(hr_image)
+    
+        if torch.cuda.is_available():
+            lr_image = lr_image.cuda()
+            hr_image = hr_image.cuda()
 
-    sr_image = model(lr_image)
-    mse = ((hr_image - sr_image) ** 2).data.mean()
-    psnr = 10 * log10(1 / mse)
-    ssim = pytorch_ssim.ssim(sr_image, hr_image).data[0]
+        sr_image = model(lr_image)
+        mse = ((hr_image - sr_image) ** 2).data.mean()
+        psnr = 10 * log10(1 / mse)
+    #     ssim = pytorch_ssim.ssim(sr_image, hr_image).data[0]
+        ssim = pytorch_ssim.ssim(sr_image, hr_image).item()
 
-    test_images = torch.stack(
-        [display_transform()(hr_restore_img.squeeze(0)), display_transform()(hr_image.data.cpu().squeeze(0)),
-         display_transform()(sr_image.data.cpu().squeeze(0))])
-    image = utils.make_grid(test_images, nrow=3, padding=5)
-    utils.save_image(image, out_path + image_name.split('.')[0] + '_psnr_%.4f_ssim_%.4f.' % (psnr, ssim) +
-                     image_name.split('.')[-1], padding=5)
+        test_images = torch.stack(
+            [display_transform()(hr_restore_img.squeeze(0)), display_transform()(hr_image.data.cpu().squeeze(0)),
+             display_transform()(sr_image.data.cpu().squeeze(0))])
+        image = utils.make_grid(test_images, nrow=3, padding=5)
+        utils.save_image(image, out_path + image_name.split('.')[0] + '_psnr_%.4f_ssim_%.4f.' % (psnr, ssim) +
+                         image_name.split('.')[-1], padding=5)
 
-    # Modification to save images separately
-    np.save(hr_restore_img.numpy(), out_path + image_name.split('.')[0] + 'hr_restore_psnr_%.4f_ssim_%.4f.' % (psnr, ssim) +
-                     image_name.split('.')[-1])
-    np.save(hr_image.numpy(), out_path + image_name.split('.')[0] + 'hr_psnr_%.4f_ssim_%.4f.' % (psnr, ssim) +
-            image_name.split('.')[-1])
-    np.save(sr_image.numpy(), out_path + image_name.split('.')[0] + 'lr_psnr_%.4f_ssim_%.4f.' % (psnr, ssim) +
-            image_name.split('.')[-1])
+        # Modification to save images separately
+        np.save(out_path+image_name.split('.')[0]+'hr_restore_psnr_%.4f_ssim_%.4f'%(psnr, ssim)                   ,hr_restore_img.cpu().numpy())
+        np.save(out_path + image_name.split('.')[0] + 'hr_psnr_%.4f_ssim_%.4f' % (psnr, ssim),hr_image.cpu().numpy())
+        np.save(out_path + image_name.split('.')[0] + 'lr_psnr_%.4f_ssim_%.4f' % (psnr, ssim),sr_image.cpu().numpy())
 
-    # save psnr\ssim
-    results[image_name.split('_')[0]]['psnr'].append(psnr)
-    results[image_name.split('_')[0]]['ssim'].append(ssim)
+        # save psnr\ssim
+        results[image_name.split('_')[0]]['psnr'].append(psnr)
+        results[image_name.split('_')[0]]['ssim'].append(ssim)
 
 out_path = 'statistics/'
 saved_results = {'psnr': [], 'ssim': []}
