@@ -54,8 +54,8 @@ for image_name, lr_image, hr_restore_img, hr_image in test_bar:
         # BILINEAR, BICUBIC INTERPOLATION #
         ###################################
         lr_im = Image.fromarray(np.reshape(np.transpose(np.uint8(255*lr_image.cpu().numpy()), (0,2,3,1)), [lr_image.shape[2],lr_image.shape[3],3]))
-        sr_bilinear = np.transpose(np.array(lr_im.resize((lr_image.shape[2]*UPSCALE_FACTOR, lr_image.shape[3]*UPSCALE_FACTOR), Image.BILINEAR)), (2,0,1) ).reshape(1,-1)
-        sr_bicubic = np.transpose(np.array(lr_im.resize((lr_image.shape[2]*UPSCALE_FACTOR, lr_image.shape[3]*UPSCALE_FACTOR), Image.BICUBIC)), (2,0,1) ).reshape(1,-1)
+        sr_bilinear = np.transpose(np.array(lr_im.resize((lr_image.shape[2]*UPSCALE_FACTOR, lr_image.shape[3]*UPSCALE_FACTOR), Image.BILINEAR)), (2,0,1) )[np.newaxis,:]
+        sr_bicubic = np.transpose(np.array(lr_im.resize((lr_image.shape[2]*UPSCALE_FACTOR, lr_image.shape[3]*UPSCALE_FACTOR), Image.BICUBIC)), (2,0,1) )[np.newaxis,:]
 
         sr_image = model(lr_image)
         mse = ((hr_image - sr_image) ** 2).data.mean()
