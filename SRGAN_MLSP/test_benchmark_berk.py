@@ -2,6 +2,8 @@ import argparse
 import os
 from math import log10
 
+from PIL import Image
+
 import numpy as np
 import pandas as pd
 import torch
@@ -48,6 +50,13 @@ for image_name, lr_image, hr_restore_img, hr_image in test_bar:
             lr_image = lr_image.cuda()
             hr_image = hr_image.cuda()
 
+        ###################################
+        # BILINEAR, BICUBIC INTERPOLATION #
+        ###################################
+        lr_im = Image.fromarray(np.reshape(np.transpose(np.uint8(255*lr_image.cpu().numpy()), (0,2,3,1)), [lr_image.shape[2],lr_image.shape[3],3]))
+        sr_bilinear = np.transpose(np.array(lr_im.resize((lr_image.shape[2]*UPSCALE_FACTOR, lr_image.shape[3]*UPSCALE_FACTOR), Image.BILINEAR)), (2,0,1) ).reshape(1,-1)
+        sr_bicubic = np.transpose(np.array(lr_im.resize((lr_image.shape[2]*UPSCALE_FACTOR, lr_image.shape[3]*UPSCALE_FACTOR), Image.BICUBIC)), (2,0,1) ).reshape(1,-1)
+
         sr_image = model(lr_image)
         mse = ((hr_image - sr_image) ** 2).data.mean()
         psnr = 10 * log10(1 / mse)
@@ -62,7 +71,10 @@ for image_name, lr_image, hr_restore_img, hr_image in test_bar:
                          image_name.split('.')[-1], padding=5)
 
         # Modification to save images separately
-        np.save(out_path+image_name.split('.')[0] + 'hr_restore_psnr_%.4f_ssim_%.4f'%(psnr, ssim)                   ,hr_restore_img.cpu().numpy())
+        np.save(out_path + image_name.split('.')[0] + 'hr_restore_BILINEAR_psnr_%.4f_ssim_%.4f' % (psnr, ssim), sr_bilinear)
+        np.save(out_path + image_name.split('.')[0] + 'hr_restore_BICUBIC_psnr_%.4f_ssim_%.4f' % (psnr, ssim), sr_bicubic)
+
+        np.save(out_path+image_name.split('.')[0] + 'hr_restore_psnr_%.4f_ssim_%.4f'%(psnr, ssim),hr_restore_img.cpu().numpy())
         np.save(out_path + image_name.split('.')[0] + 'hr_psnr_%.4f_ssim_%.4f' % (psnr, ssim),hr_image.cpu().numpy())
         np.save(out_path + image_name.split('.')[0] + 'lr_psnr_%.4f_ssim_%.4f' % (psnr, ssim),sr_image.cpu().numpy())
 
