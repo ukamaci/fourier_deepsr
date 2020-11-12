@@ -117,25 +117,19 @@ def ringsum_torch(im, corners=False):
     '''
     assert im.shape[0] == im.shape[1], 'input should be square'
     imsize = im.shape[0]
-    r = np.arange(imsize) - imsize//2
+    r = torch.arange(imsize) - imsize//2
     # generate a meshgrid where the origin is the midpoint of the array.
     # if the array length is even, the lower right point will be the origin.
-    [xx,yy] = np.meshgrid(r,r)
-    radii = np.sqrt(xx**2 + yy**2)
+    [xx,yy] = torch.meshgrid(r,r)
+    radii = torch.sqrt(xx**2 + yy**2)
 
-    maxrad = int(np.max(radii)) if corners else imsize//2
-    sums = []
+    maxrad = int(torch.max(radii)) if corners else imsize//2
+    sums = torch.zeros(maxrad+1)
 
     for radius in range(maxrad+1):
-        sums.append(
-            np.sum(
-                im[
-                    np.where((radii < radius+0.5) & (radii >= radius - 0.5))
-                ]
-            )
-        )
+        sums[radius] = torch.sum(im[torch.where(torch.BoolTensor((radii < radius+0.5) & (radii >= radius - 0.5)))])
 
-    return np.array(sums)
+    return sums
 
 def get_frc_torch(im1, im2, corners=False):
     '''
@@ -166,7 +160,7 @@ def get_frc_torch(im1, im2, corners=False):
 
     return (
         ringsum_torch(im1f * im2f.conj(), corners=corners) /
-        np.sqrt(
+        torch.sqrt(
             ringsum_torch(torch.abs(im1f)**2, corners=corners) *
             ringsum_torch(torch.abs(im2f)**2, corners=corners)
         )

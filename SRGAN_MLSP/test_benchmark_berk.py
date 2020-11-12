@@ -76,7 +76,7 @@ for image_name, lr_image, hr_restore_img, hr_image in test_bar:
 
         np.save(out_path+image_name.split('.')[0] + 'hr_restore_psnr_%.4f_ssim_%.4f'%(psnr, ssim),hr_restore_img.cpu().numpy())
         np.save(out_path + image_name.split('.')[0] + 'hr_psnr_%.4f_ssim_%.4f' % (psnr, ssim),hr_image.cpu().numpy())
-        np.save(out_path + image_name.split('.')[0] + 'lr_psnr_%.4f_ssim_%.4f' % (psnr, ssim),sr_image.cpu().numpy())
+        np.save(out_path + image_name.split('.')[0] + 'sr_psnr_%.4f_ssim_%.4f' % (psnr, ssim),sr_image.cpu().numpy())
 
         # save psnr\ssim
         results[image_name.split('_')[0]]['psnr'].append(psnr)
