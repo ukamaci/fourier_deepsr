@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import torch.fft
 
 def ringsum(im, corners=False):
     '''
@@ -86,7 +87,8 @@ def roll_n(X, axis, n):
     return torch.cat([back, front], axis)
 
 def batch_fftshift2d(x):
-    real, imag = torch.unbind(x, -1)
+    real = x.real
+    imag = x.imag
     for dim in range(1, len(real.size())):
         n_shift = real.size(dim)//2
         if real.size(dim) % 2 != 0:
@@ -94,7 +96,6 @@ def batch_fftshift2d(x):
         real = roll_n(real, axis=dim, n=n_shift)
         imag = roll_n(imag, axis=dim, n=n_shift)
     return torch.stack((real, imag), -1)  # last dim=2 (real&imag)
-
 
 def ringsum_torch(im, corners=False):
     '''
@@ -121,6 +122,8 @@ def ringsum_torch(im, corners=False):
     # generate a meshgrid where the origin is the midpoint of the array.
     # if the array length is even, the lower right point will be the origin.
     [xx,yy] = torch.meshgrid(r,r)
+    xx = xx.double()
+    yy = yy.double()
     radii = torch.sqrt(xx**2 + yy**2)
 
     maxrad = int(torch.max(radii)) if corners else imsize//2
@@ -155,8 +158,8 @@ def get_frc_torch(im1, im2, corners=False):
     assert im1.shape == im2.shape, 'image shapes must match'
     assert im1.shape[0] == im1.shape[1], 'images must be square'
 
-    im1f = batch_fftshift2d(torch.fft.fft(im1))
-    im2f = batch_fftshift2d(torch.fft.fft(im2))
+    im1f = batch_fftshift2d(torch.fft.fftn(im1))
+    im2f = batch_fftshift2d(torch.fft.fftn(im2))
 
     return (
         ringsum_torch(im1f * im2f.conj(), corners=corners) /
