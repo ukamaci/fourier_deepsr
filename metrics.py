@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 import torch.fft
+from torch import nn
 
 def ringsum(im, corners=False):
     '''
@@ -168,3 +169,28 @@ def get_frc_torch(im1, im2, corners=False):
             ringsum_torch(torch.abs(im2f)**2, corners=corners)
         )
     )
+
+# def frc_loss(batch1, batch2):
+#     loss = 0
+#     for batch in range(batch1.shape[0]):
+#         for ch in range(batch1.shape[1]):
+#             im1 = batch1[batch,ch,:,:]
+#             im2 = batch2[batch,ch, :, :]
+#
+#             loss += get_frc_torch(im1, im2)
+#
+#     return loss
+
+# class frc_loss(nn.Module):
+#     def __init__(self):
+#         super(frc_loss, self).__init__()
+#
+#     def forward(self, batch1,batch2):
+#         loss = 0
+#         for batch in range(batch1.shape[0]):
+#             for ch in range(batch1.shape[1]):
+#                 im1 = batch1[batch, ch, :, :]
+#                 im2 = batch2[batch, ch, :, :]
+#
+#                 loss += get_frc_torch(im1, im2)
+#         return loss

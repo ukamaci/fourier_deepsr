@@ -2,6 +2,9 @@ import torch
 from torch import nn
 from torchvision.models.vgg import vgg16
 
+import sys
+sys.path.append('/home/berk/Documents/GitHub/fourier_deepsr/')
+import metrics                                                              # import own metrics.py for importing FRC
 
 class GeneratorLoss(nn.Module):
     def __init__(self):
@@ -14,6 +17,9 @@ class GeneratorLoss(nn.Module):
         self.mse_loss = nn.MSELoss()
         self.tv_loss = TVLoss()
 
+        # FRC loss implementation
+        self.frc = frc_loss()
+
     def forward(self, out_labels, out_images, target_images):
         # Adversarial Loss
         adversarial_loss = torch.mean(1 - out_labels)
@@ -23,7 +29,17 @@ class GeneratorLoss(nn.Module):
         image_loss = self.mse_loss(out_images, target_images)
         # TV Loss
         tv_loss = self.tv_loss(out_images)
-        return image_loss + 0.001 * adversarial_loss + 0.006 * perception_loss + 2e-8 * tv_loss
+        # FRC Loss implementation
+        frc = self.frc(out_images,target_images)
+
+        # print('\n')
+        # print('kabuk korelasyonu kaybi', 1e-4 * frc)
+        # print('resimsel kayip', image_loss)
+        # print('algisal kayip', 0.006 * perception_loss)
+        # print('ters kayip', 0.001 * adversarial_loss)
+        # print('\n')
+
+        return image_loss + 0.001 * adversarial_loss + 0.006 * perception_loss + 2e-8 * tv_loss + 1e-5 * frc
 
 
 class TVLoss(nn.Module):
@@ -45,6 +61,19 @@ class TVLoss(nn.Module):
     def tensor_size(t):
         return t.size()[1] * t.size()[2] * t.size()[3]
 
+class frc_loss(nn.Module):
+    def __init__(self):
+        super(frc_loss, self).__init__()
+        self.mse_loss = nn.MSELoss()
+    def forward(self,batch1,batch2):
+        loss = 0
+        for batch in range(batch1.shape[0]):
+            for ch in range(batch1.shape[1]):
+                im1 = batch1[batch, ch, :, :]
+                im2 = batch2[batch, ch, :, :]
+                loss_ind = metrics.get_frc_torch(im1, im2)
+                loss += self.mse_loss(loss_ind,torch.ones(loss_ind.shape))
+        return loss
 
 if __name__ == "__main__":
     g_loss = GeneratorLoss()
