@@ -3,6 +3,18 @@ import torch
 import torch.fft
 from torch import nn
 
+def comp_mult(im1,im2):
+    out = torch.zeros(im1.shape)
+    out[:,:,0] = im1[:,:,0]*im2[:,:,0] - im1[:,:,1]*im2[:,:,1]
+    out[:,:,1] = im1[:,:,0]*im2[:,:,1] + im1[:,:,1]*im2[:,:,0]
+    return out
+
+def comp_conj(im1):
+    return torch.stack((im1[:,:,0] , -im1[:,:,1]), -1)
+
+def comp_abs(im1):
+    return torch.sqrt(im1[:,:,0]**2 + im1[:,:,1]**2)
+
 def ringsum(im, corners=False):
     '''
     Given a 2d square array, calculate the sum of elements for each concentric
@@ -96,7 +108,52 @@ def batch_fftshift2d(x):
             n_shift += 1  # for odd-sized images
         real = roll_n(real, axis=dim, n=n_shift)
         imag = roll_n(imag, axis=dim, n=n_shift)
-    return torch.stack((real, imag), -1)  # last dim=2 (real&imag)
+
+    return torch.stack((real, imag), -1) # last dim=2 (real&imag)
+
+def ringsum_torch_comp(im, corners=False):
+    '''
+    Given a 2d square array, calculate the sum of elements for each concentric
+    ring of 1 pixel width and return the array of sums.
+
+    Parameters
+    ----------
+    im : ndarray
+        Elements to sum.
+    corners : bool, optional
+        If set to True, the largest ring diameter will be set to corner-to-corner
+        distance; otherwise edge-to-edge.
+
+    Returns
+    -------
+    ndarray
+        1d array whose n^th element is the sum of input's elements inside the
+        n^th ring.
+    '''
+    assert im.shape[0] == im.shape[1], 'input should be square'
+    imsize = im.shape[0]
+    r = torch.arange(imsize) - imsize//2
+    # generate a meshgrid where the origin is the midpoint of the array.
+    # if the array length is even, the lower right point will be the origin.
+    [xx,yy] = torch.meshgrid(r,r)
+    xx = xx.double()
+    yy = yy.double()
+    radii = torch.sqrt(xx**2 + yy**2)
+
+    maxrad = int(torch.max(radii)) if corners else imsize//2
+
+    sums1 = torch.zeros(maxrad+1)
+    sums2 = torch.zeros(maxrad+1)
+
+    im1 = im[:,:,0]
+    im2 = im[:,:,1]
+
+    for radius in range(maxrad+1):
+        ind = torch.where(torch.BoolTensor((radii < radius+0.5) & (radii >= radius - 0.5)))
+        sums1[radius] = torch.sum(im1[ind])
+        sums2[radius] = torch.sum(im2[ind])
+
+    return torch.stack((sums1, sums2), -1)
 
 def ringsum_torch(im, corners=False):
     '''
@@ -135,6 +192,7 @@ def ringsum_torch(im, corners=False):
 
     return sums
 
+
 def get_frc_torch(im1, im2, corners=False):
     '''
     Given two 2d arrays of the same shape, calculate the Fourier ring
@@ -162,12 +220,14 @@ def get_frc_torch(im1, im2, corners=False):
     im1f = batch_fftshift2d(torch.fft.fftn(im1))
     im2f = batch_fftshift2d(torch.fft.fftn(im2))
 
+    denom = torch.sqrt(
+        ringsum_torch(comp_abs(im1f) ** 2, corners=corners) *
+        ringsum_torch(comp_abs(im2f) ** 2, corners=corners) + 1e-8
+    )
+
     return (
-        ringsum_torch(im1f * im2f.conj(), corners=corners) /
-        torch.sqrt(
-            ringsum_torch(torch.abs(im1f)**2, corners=corners) *
-            ringsum_torch(torch.abs(im2f)**2, corners=corners)
-        )
+        ringsum_torch_comp(comp_mult(im1f,comp_conj(im2f)), corners=corners) /
+        torch.stack((denom, denom), -1)
     )
 
 # def frc_loss(batch1, batch2):
