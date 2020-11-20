@@ -156,7 +156,7 @@ def ringsum_torch_comp(im, corners=False):
     return torch.stack((sums1, sums2), -1)
 
 def ringsum_torch(im, corners=False):
-    
+
     '''
     Given a 2d square array, calculate the sum of elements for each concentric
     ring of 1 pixel width and return the array of sums.
@@ -218,13 +218,13 @@ def get_frc_torch(im1, im2, corners=False):
     assert im1.shape == im2.shape, 'image shapes must match'
     assert im1.shape[0] == im1.shape[1], 'images must be square'
 
-    im1f = batch_fftshift2d(torch.fft.fftn(im1))
-    im2f = batch_fftshift2d(torch.fft.fftn(im2))
-    
+    im1f = batch_fftshift2d(torch.fft.fftn(im1[None,:,:]))[0]
+    im2f = batch_fftshift2d(torch.fft.fftn(im2[None,:,:]))[0]
+
     denom = torch.sqrt(
         ringsum_torch(comp_abs(im1f) ** 2, corners=corners) *
-        ringsum_torch(comp_abs(im2f) ** 2, corners=corners) + 1e-8
-    )
+        ringsum_torch(comp_abs(im2f) ** 2, corners=corners)
+    ) + 1e-8
 
     return (
         ringsum_torch_comp(comp_mult(im1f,comp_conj(im2f)), corners=corners) /
