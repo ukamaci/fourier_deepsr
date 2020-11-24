@@ -83,7 +83,6 @@ class Discriminator(nn.Module):
         batch_size = x.size(0)
         return torch.sigmoid(self.net(x).view(batch_size))
 
-
 class ResidualBlock(nn.Module):
     def __init__(self, channels):
         super(ResidualBlock, self).__init__()
@@ -99,9 +98,7 @@ class ResidualBlock(nn.Module):
         residual = self.prelu(residual)
         residual = self.conv2(residual)
         residual = self.bn2(residual)
-
         return x + residual
-
 
 class UpsampleBLock(nn.Module):
     def __init__(self, in_channels, up_scale):

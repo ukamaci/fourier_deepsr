@@ -33,8 +33,8 @@ class GeneratorLoss(nn.Module):
         frc = self.frc(out_images,target_images)
 
         # print('\n')
-        # print('kabuk korelasyonu kaybi', 2e-5 * frc)
-        # print('resimsel kayip', image_loss)
+        print('kabuk korelasyonu kaybi', 2e-5 * frc)
+        print('resimsel kayip', image_loss)
         # print('algisal kayip', 0.006 * perception_loss)
         # print('ters kayip', 0.001 * adversarial_loss)
         # print('\n')
@@ -72,7 +72,14 @@ class frc_loss(nn.Module):
                 im1 = batch1[batch, ch, :, :]
                 im2 = batch2[batch, ch, :, :]
                 loss_ind = metrics.get_frc_torch(im1, im2)
-                loss += self.mse_loss(loss_ind,torch.ones(loss_ind.shape))
+
+                # # Look into whole frequencies
+                # loss += self.mse_loss(loss_ind,torch.ones(loss_ind.shape))
+
+                # Look into the mid 1/3 subpart
+                l = loss_ind.shape[0]
+                loss += self.mse_loss(loss_ind[l//3:2*l//3,:], torch.ones(loss_ind[l//3:2*l//3,:].shape))
+
         return loss
 
 if __name__ == "__main__":
