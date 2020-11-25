@@ -39,7 +39,7 @@ class GeneratorLoss(nn.Module):
         # print('ters kayip', 0.001 * adversarial_loss)
         # print('\n')
 
-        return image_loss + 0.001 * adversarial_loss + 0.006 * perception_loss + 2e-8 * tv_loss + 0* frc
+        return image_loss + 0.001 * adversarial_loss + 0.006 * perception_loss + 2e-8 * tv_loss + 2e-5 * frc
 
 
 class TVLoss(nn.Module):
@@ -73,12 +73,12 @@ class frc_loss(nn.Module):
                 im2 = batch2[batch, ch, :, :]
                 loss_ind = metrics.get_frc_torch(im1, im2)
 
-                # # Look into whole frequencies
-                # loss += self.mse_loss(loss_ind,torch.ones(loss_ind.shape))
+                # Look into whole frequencies
+                loss += self.mse_loss(loss_ind,torch.ones(loss_ind.shape))
 
-                # Look into the mid 1/3 subpart
-                l = loss_ind.shape[0]
-                loss += self.mse_loss(loss_ind[l//3:2*l//3,:], torch.ones(loss_ind[l//3:2*l//3,:].shape))
+                # # Look into the mid 1/3 subpart
+                # l = loss_ind.shape[0]
+                # loss += self.mse_loss(loss_ind[l//3:2*l//3,:], torch.ones(loss_ind[l//3:2*l//3,:].shape))
 
         return loss
 
