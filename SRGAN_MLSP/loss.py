@@ -39,7 +39,7 @@ class GeneratorLoss(nn.Module):
         # print('ters kayip', 0.001 * adversarial_loss)
         # print('\n')
 
-        return image_loss + 0.001 * adversarial_loss + 0.006 * perception_loss + 2e-8 * tv_loss + 2e-5 * frc
+        return image_loss + 0.001 * adversarial_loss + 0.006 * perception_loss + 2e-8 * tv_loss + 0* frc
 
 
 class TVLoss(nn.Module):
