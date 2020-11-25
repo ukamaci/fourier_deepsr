@@ -65,6 +65,7 @@ class frc_loss(nn.Module):
     def __init__(self):
         super(frc_loss, self).__init__()
         self.mse_loss = nn.MSELoss()
+
     def forward(self,batch1,batch2):
         loss = 0
         for batch in range(batch1.shape[0]):
@@ -74,7 +75,7 @@ class frc_loss(nn.Module):
                 loss_ind = metrics.get_frc_torch(im1, im2)
 
                 # Look into whole frequencies
-                loss += self.mse_loss(loss_ind,torch.ones(loss_ind.shape))
+                loss += self.mse_loss(loss_ind, torch.stack((torch.ones(loss_ind.shape[0]), torch.zeros(loss_ind.shape[0])), -1) )
 
                 # # Look into the mid 1/3 subpart
                 # l = loss_ind.shape[0]
