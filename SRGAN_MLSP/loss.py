@@ -33,13 +33,13 @@ class GeneratorLoss(nn.Module):
         frc = self.frc(out_images,target_images)
 
         # print('\n')
-        print('kabuk korelasyonu kaybi', 1e-4 * frc)
+        print('kabuk korelasyonu kaybi', frc)
         print('resimsel kayip', image_loss)
         # print('algisal kayip', 0.006 * perception_loss)
         # print('ters kayip', 0.001 * adversarial_loss)
         # print('\n')
 
-        return image_loss + 0.001 * adversarial_loss + 0.006 * perception_loss + 2e-8 * tv_loss + 1e-4 * frc
+        return image_loss + 0.001 * adversarial_loss + 0.006 * perception_loss + 2e-8 * tv_loss + 2e-4 * frc
 
 
 class TVLoss(nn.Module):
@@ -75,11 +75,10 @@ class frc_loss(nn.Module):
                 loss_ind = metrics.get_frc_torch(im1, im2)
 
                 # # Look into whole frequencies
-                # loss += self.mse_loss(loss_ind, torch.stack((torch.ones(loss_ind.shape[0]), torch.zeros(loss_ind.shape[0])), -1) )
+                loss += self.mse_loss(loss_ind, torch.stack((torch.ones(loss_ind.shape[0]), torch.zeros(loss_ind.shape[0])), -1) )
 
                 # Only real part
-                loss += self.mse_loss(loss_ind[:,0], torch.ones(loss_ind.shape[0]))
-
+#                 loss += self.mse_loss(loss_ind[:,0], torch.ones(loss_ind.shape[0]))
                 # # Look into the mid 1/3 subpart
                 # l = loss_ind.shape[0]
                 # loss += self.mse_loss(loss_ind[l//3:2*l//3,:], torch.ones(loss_ind[l//3:2*l//3,:].shape))

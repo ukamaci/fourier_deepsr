@@ -16,6 +16,7 @@ from loss import GeneratorLoss
 from model import Generator, Discriminator
 
 from torch import nn
+import math 
 
 parser = argparse.ArgumentParser(description='Train Super Resolution Models')
 parser.add_argument('--crop_size', default=88, type=int, help='training images crop size')
@@ -91,6 +92,16 @@ if __name__ == '__main__':
             fake_out = netD(fake_img).mean()
             
             optimizerD.step()
+            
+            total_norm = 0
+            for p in netG.parameters():
+                param_norm = p.grad.data.norm(2)
+                if math.isnan(p.grad.data.norm(2).item()):
+                    p.grad = 0
+                total_norm += param_norm.item() ** 2
+            total_norm = total_norm ** (1. / 2)            
+            print("Total Gradient Norm: %f"%total_norm)
+#             nn.utils.clip_grad_norm_(netG.parameters(), 0.6)
             optimizerG.step()
 
             # loss for current batch before optimization 
