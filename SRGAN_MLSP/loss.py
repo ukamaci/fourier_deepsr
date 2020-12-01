@@ -33,8 +33,8 @@ class GeneratorLoss(nn.Module):
         frc = self.frc(out_images,target_images)
 
         # print('\n')
-        print('kabuk korelasyonu kaybi', frc)
-        print('resimsel kayip', image_loss)
+        # print('kabuk korelasyonu kaybi', frc)
+        # print('resimsel kayip', image_loss)
         # print('algisal kayip', 0.006 * perception_loss)
         # print('ters kayip', 0.001 * adversarial_loss)
         # print('\n')

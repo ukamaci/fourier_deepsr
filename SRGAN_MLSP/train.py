@@ -97,9 +97,9 @@ if __name__ == '__main__':
             for p in netG.parameters():
                 param_norm = p.grad.data.norm(2)
                 if math.isnan(p.grad.data.norm(2).item()):
-                    p.grad = 0
+                    p.grad = torch.zeros(p.shape).cuda()
                 total_norm += param_norm.item() ** 2
-            total_norm = total_norm ** (1. / 2)            
+            total_norm = total_norm ** (1. / 2)
             print("Total Gradient Norm: %f"%total_norm)
 #             nn.utils.clip_grad_norm_(netG.parameters(), 0.6)
             optimizerG.step()
