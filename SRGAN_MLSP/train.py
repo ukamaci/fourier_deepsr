@@ -97,7 +97,7 @@ if __name__ == '__main__':
             for p in netG.parameters():
                 param_norm = p.grad.data.norm(2)
                 if math.isnan(p.grad.data.norm(2).item()):
-                    p.grad = torch.zeros(p.shape).cuda()
+                    p.grad = (1e-8*torch.ones(p.shape)).cuda()
                 total_norm += param_norm.item() ** 2
             total_norm = total_norm ** (1. / 2)
             print("Total Gradient Norm: %f"%total_norm)

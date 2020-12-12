@@ -16,11 +16,13 @@ class GeneratorLoss(nn.Module):
         self.loss_network = loss_network
         self.mse_loss = nn.MSELoss()
         self.tv_loss = TVLoss()
+        self.l1_loss = nn.L1Loss()
 
         # FRC loss implementation
         self.frc = frc_loss()
 
     def forward(self, out_labels, out_images, target_images):
+
         # Adversarial Loss
         adversarial_loss = torch.mean(1 - out_labels)
         # Perception Loss
@@ -39,7 +41,9 @@ class GeneratorLoss(nn.Module):
         # print('ters kayip', 0.001 * adversarial_loss)
         # print('\n')
 
-        return image_loss + 0.001 * adversarial_loss + 0.006 * perception_loss + 2e-8 * tv_loss + 2e-4 * frc
+        # L2 loss: 2e-4, l1 loss: ?
+
+        return image_loss + 0.001 * adversarial_loss + 0.006 * perception_loss + 2e-8 * tv_loss + 1e-4 * frc
 
 
 class TVLoss(nn.Module):
@@ -65,6 +69,7 @@ class frc_loss(nn.Module):
     def __init__(self):
         super(frc_loss, self).__init__()
         self.mse_loss = nn.MSELoss()
+        self.l1_loss = nn.L1Loss()
 
     def forward(self,batch1,batch2):
         loss = 0
@@ -75,13 +80,16 @@ class frc_loss(nn.Module):
                 loss_ind = metrics.get_frc_torch(im1, im2)
 
                 # # Look into whole frequencies
-                loss += self.mse_loss(loss_ind, torch.stack((torch.ones(loss_ind.shape[0]), torch.zeros(loss_ind.shape[0])), -1) )
+                # loss += self.mse_loss(loss_ind, torch.stack((torch.ones(loss_ind.shape[0]), torch.zeros(loss_ind.shape[0])), -1) )
+                # loss += self.l1_loss(loss_ind, torch.stack((torch.ones(loss_ind.shape[0]), torch.zeros(loss_ind.shape[0])), -1) )
 
                 # Only real part
 #                 loss += self.mse_loss(loss_ind[:,0], torch.ones(loss_ind.shape[0]))
-                # # Look into the mid 1/3 subpart
-                # l = loss_ind.shape[0]
+
+                # Look into the mid 1/3 subpart
+                l = loss_ind.shape[0]
                 # loss += self.mse_loss(loss_ind[l//3:2*l//3,:], torch.ones(loss_ind[l//3:2*l//3,:].shape))
+                loss += self.mse_loss(loss_ind[l//3:2*l//3,:], torch.stack((torch.ones(loss_ind[l//3:2*l//3,:].shape[0]), torch.zeros(loss_ind[l//3:2*l//3,:].shape[0])), -1))
 
         return loss
 
